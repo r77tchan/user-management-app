@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt')
 // 'User' モデルをインポートして、データベース操作を行う
 // このモデルを通じてユーザー情報の作成、読み取り、更新、削除 (CRUD) 操作を実行する
 const User = require('../models/userModel')
+const { search } = require('../routes/userRoutes')
 
 // 新しいユーザーを作成する関数
 // req: クライアントから送られてきたリクエストオブジェクト
@@ -112,5 +113,34 @@ exports.loginUser = (req, res) => {
       // パスワードが一致する場合のレスポンス（ログイン成功）
       res.status(200).json({ message: 'Login successful' })
     })
+  })
+}
+
+// ユーザーの検索を行う関数
+exports.searchUser = (req, res) => {
+  // リクエストパラメータからユーザー入力を取得
+  const searchInput = req.query.searchInput
+
+  // 未入力、不正文字をサーバー側でも確認
+  if (!searchInput) {
+    return res.status(500).json({ message: '入力してください' })
+  }
+  // ざっくり不正文字（@-.は使える)
+  const symbol =
+    /[!"#$%&'()*+,\/:;<=>?[\]^_`{|}~　 ！”＃＄％＆’（）*+，−．／：；＜＝＞？＠［＼］＾＿｀｛｜｝〜]/.test(
+      searchInput
+    )
+  if (symbol) {
+    return res.status(500).json({ message: '不正文字を検知' })
+  }
+
+  // 入力が正常の場合
+  // データベースからユーザー入力を元に検索する
+  User.searchByInput(searchInput, (err, users) => {
+    // データベース操作中にエラーが発生した場合のエラーハンドリング
+    if (err) return res.status(500).json({ error: err })
+
+    // 正常にユーザーが取得できた場合、JSON形式でユーザー情報を返す
+    res.status(200).json(users)
   })
 }

@@ -4,6 +4,9 @@
 // フォームに入力された情報を取得し、新しいユーザーをサーバーに登録する
 document.getElementById('userForm').addEventListener('submit', addUser)
 
+// 検索フォームの送信イベント
+document.getElementById('searchForm').addEventListener('submit', searchUser)
+
 // ユーザーを追加するための関数
 // `e` はイベントオブジェクトを表し、フォーム送信時のデフォルト動作を防止するために使用する
 function addUser(e) {
@@ -95,16 +98,86 @@ function deleteUser(id) {
     })
 }
 
+// ユーザーを検索する関数
+function searchUser(e) {
+  // デフォルトの挙動を無効
+  e.preventDefault()
+  // フォーム入力値を取得
+  const searchInput = document.getElementById('searchInput').value
+
+  // エラー文出力要素を取得
+  const errorElement = document.getElementById('errorMessage')
+
+  // 入力値が空の場合にエラーメッセージを表示
+  if (!searchInput) {
+    errorElement.textContent = '入力してください'
+    return
+  }
+
+  // 入力値に特殊文字を含む場合にエラーメッセージを表示
+  // ざっくり不正文字（@-.は使える)
+  const symbol =
+    /[!"#$%&'()*+,\/:;<=>?[\]^_`{|}~　 ！”＃＄％＆’（）*+，−．／：；＜＝＞？＠［＼］＾＿｀｛｜｝〜]/.test(
+      searchInput
+    )
+  if (symbol) {
+    errorElement.textContent = '不正文字を検知'
+    return
+  }
+
+  // 入力値が正常ならエラーメッセージをリセット
+  errorElement.textContent = ''
+
+  // 送信
+  axios
+    .get('http://localhost:3000/api/users/search', {
+      params: {
+        searchInput: searchInput,
+      },
+    })
+    .then((response) => {
+      // サーバーから取得したユーザーリストを `users` 変数に格納
+      const users = response.data
+
+      // HTML 内のユーザーリスト表示用の要素を取得
+      const userList = document.getElementById('userList')
+
+      // 現在のユーザーリスト表示をクリア（古いリストを消去）
+      userList.innerHTML = ''
+
+      // 検索結果がない場合
+      if (!users.length) {
+        // 結果がないメッセージを格納する `<p>` 要素を作成
+        const p = document.createElement('p')
+        p.innerHTML = `該当するユーザーが見つかりませんでした`
+
+        // 作成した `<p>` 要素をユーザーリストの表示要素に追加
+        userList.appendChild(p)
+      }
+
+      // 各ユーザーの情報をリストアイテムとして表示
+      users.forEach((user) => {
+        // ユーザー情報を格納する `<li>` 要素を作成
+        const li = document.createElement('li')
+
+        // リストアイテムの内容を設定
+        // ユーザー名、メールアドレス、更新リンク、および削除ボタンを表示
+        li.innerHTML = `
+                    ${user.name} (${user.email})    <!-- ユーザー名とメールアドレスを表示 -->
+                    <a href="update.html?id=${user.id}">Update</a>    <!-- 更新用リンク。クリックすると update.html ページに移動し、指定されたユーザーIDの編集が可能 -->
+                    <button onclick="deleteUser(${user.id})">Delete</button>    <!-- 削除ボタン。クリックすると deleteUser 関数が実行され、ユーザーが削除される -->
+                `
+
+        // 作成した `<li>` 要素をユーザーリストの表示要素に追加
+        userList.appendChild(li)
+      })
+    })
+    .catch((error) => {
+      // ユーザー情報の取得中にエラーが発生した場合、エラーメッセージをコンソールに表示
+      console.error('Error', error)
+    })
+}
+
 // ページが最初にロードされたときに `getUsers` 関数を実行し、初期状態でユーザーリストを表示する
 // ページ読み込み時にすべてのユーザー情報を取得して、表示を行う
 getUsers()
-
-/*
-# ③ブランチ先へのコミットとプッシュを行ってみよう
-
-⓵main.jsファイル内に簡単でいいのでコメントアウトしてみましょう。
-
-②その後コミットしてみましょう。コミットの方法も動画があるかと思います。もしわからなかったら研修担当に確認して下さい。
-
-③プッシュを行いましょう。こちらも動画ありますので確認してみて下さい。わからなったら研修担当まで相談
-*/
