@@ -73,6 +73,16 @@ const User = {
     // クエリを実行し、結果をコールバック関数に渡す
     db.query(query, [id], callback)
   },
+
+  // ユーザーをユーザー名またはメールアドレスが部分一致するデータを取得するメソッド
+  // `searchInput`はユーザー入力による検索したいワード
+  searchByInput: (searchInput, callback) => {
+    // ユーザー入力を元に検索するクエリ
+    const query = `SELECT * FROM users WHERE name LIKE ? OR email LIKE ?`
+
+    // クエリを実行し、結果をコールバック関数に渡す
+    db.query(query, [`%${searchInput}%`, `%${searchInput}%`], callback)
+  },
 }
 
 // `User` オブジェクトをエクスポートし、他のファイルで使用できるようにする
